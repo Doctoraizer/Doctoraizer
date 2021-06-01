@@ -64,12 +64,15 @@ Whenever a pull request done by a member, they should notify the team in order t
 
 How many people must review a PR?
 - one review
+
 Who merges PRs?
 - to develop > the reviewer
 - to main > leader
+
 How often will you merge?
-daily
+- daily
+
 How will you communicate that it’s time to merge?
-on slack
+- on slack
 
  
