@@ -60,6 +60,7 @@ Non-functional requirements are requirements that are not directly related to th
 
 Security 
 - the data is very confedential and inludes sensetive personal information, thus, a high level of securty must be ensured.
+
 Usability 
 - the program should be simple and straight-forward, the user wants to get the classification result at minimum time because time is very limited in the medical laboratory.
 - other users wants to be able to use th program without previous experience. 
