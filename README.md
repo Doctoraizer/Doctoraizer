@@ -13,3 +13,11 @@
 ## Project idea :
 * By applying the principles of deep machine learning, we can design a diagnostic medical program on which we can upload a chest X-ray of a patient and determine whether or not he has COVID-19.
 * **MVP** : It can determine the infection with an accuracy of greater than 80%
+
+## Wireframe
+
+![img](/assets/guipng.png)
+![img](/assets/personal_info.png)
+![img](/assets/report.png)
+
+
