@@ -15,11 +15,11 @@ Doctorizer usees advanced Machine learning algorithms to help doctors and labora
 
 ### IN - What will your product do
 
-The program will let the user to upload a single/set of x-ray images.
-The program will analyze the uploaded images and classify them into normal or abnormal state.
-The program will display the classification results immediately after the proccess is done.
-when uploading a single x-ray image only, the program will let the user insert patient data in order to generate an automated report with the result of thier test.
-The program will generate automated report which contains patient data, classification result with probalbility of infection, and medical recommendations.
+- The program will let the user to upload a single/set of x-ray images.
+- The program will analyze the uploaded images and classify them into normal or abnormal state.
+- The program will display the classification results immediately after the proccess is done.
+- When uploading a single x-ray image only, the program will let the user insert patient data in order to generate an automated report with the result of thier test.
+- The program will generate automated report which contains patient data, classification result with probalbility of infection, and medical recommendations.
 
 
 ### OUT - What will your product not do.
@@ -32,10 +32,10 @@ will not detect all of the lung related diseases and it will be restriced to pne
 It can determine the infection of pneumonia with an accuracy of 80%.
 
 #### What are your stretch goals?
-The program will store all the previously analyzed data in a database. 
-The program will let the user access any of the previously analyzed images and give feedback in order to tune the classification algorithm.
-The program will detect other types of lung diseases.
-The data will be encrypted when it is stored in the database and decrypted when retrieved to ensure high security and patient privacy. 
+- The program will store all the previously analyzed data in a database. 
+- The program will let the user access any of the previously analyzed images and give feedback in order to tune the classification algorithm.
+- The program will detect other types of lung diseases.
+- The data will be encrypted when it is stored in the database and decrypted when retrieved to ensure high security and patient privacy. 
  
 #### What stretch goals are you going to aim for?
 -  Store the images and results in a database.
@@ -45,11 +45,11 @@ The data will be encrypted when it is stored in the database and decrypted when 
 
 List the functionality of your product. This will consist of tasks such as the following:
 
-A user can upload a single/set of x-ray images.
-A user can clear the uploaded images in the workspace.
-A user can click on classify to analyze the uploaded images.
-A user can insert the related patient information to the program to generate a report.
-A user can generate automated reports for the uploaded data.
+- A user can upload a single/set of x-ray images.
+- A user can clear the uploaded images in the workspace.
+- A user can click on classify to analyze the uploaded images.
+- A user can insert the related patient information to the program to generate a report.
+- A user can generate automated reports for the uploaded data.
 
 
 ## Data Flow
