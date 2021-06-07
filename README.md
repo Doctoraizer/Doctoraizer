@@ -24,4 +24,4 @@
 [Trello](https://trello.com/b/mZicPTAe/doctoraiser)
 
 ## Domain model
-![img](/assets/domain_model.png)
+![img](/assets/domain_model2.png)
