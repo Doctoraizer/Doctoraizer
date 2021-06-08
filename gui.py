@@ -3,12 +3,12 @@
 # done, you know tkinter now!
 from tkinter import *
 from tkinter import filedialog
-from tkinter import ttk  # Normal Tkinter.* widgets are not themed!
+from tkinter import ttk
 from ttkthemes import ThemedTk
 from PIL import ImageTk, Image
 from docx import *
 from docx import Document
-
+from main import predict
 class App:
     def __init__(self):
         print('App created..')
@@ -32,22 +32,26 @@ class App:
 class Main_window(ThemedTk, App):
     def __init__(self):
         super().__init__()
-        # global m_background
-        # m_background = ImageTk.PhotoImage(Image.open('./assets/bk.jpg'))
-        # ttk.Label(self, image =m_background).place(x = 0, y = 0)
+        global m_background
+        m_background = ImageTk.PhotoImage(Image.open('./assets/bk_main.png'))
+        Label(self, image =m_background).pack(expand=True)
         self.body = ttk.Frame(self)
         self.body.place(relx=0.5,rely=0.5,anchor=CENTER) # center all app content to the center of the body
         self.resizable(width = True, height = True) # Allow Window to be resizable
         self.title('Doctorizer')
-        self.iconbitmap('./assets/logo.png')
-        self.config(bg="#2d2d2d")
+        self.image_path = None
+        self.result = None
+        # self.iconbitmap('./assets/logo.png')
+        # self.config(bg="white")
         #left and right frames
         self.left_frame = ttk.Frame(self.body)
         self.left_frame.grid(row=1, column=0, padx=50, pady=10)
 
         self.right_frame = ttk.LabelFrame(self.body, text='X-ray image', width=505,height=510)
         self.right_frame.grid(row=1, column=1, padx=50,pady=10)
-
+        # global b_background
+        # b_background = ImageTk.PhotoImage(Image.open('./assets/body_bk.png'))
+        # Label(self.right_frame, image =b_background).place(x=0,y=0)
         # main screen widgets
         # Label(self, text ="X-ray image analyzer", font=10).place(relx=0.5,rely=0.04, anchor=CENTER)
 
@@ -60,13 +64,13 @@ class Main_window(ThemedTk, App):
     def upload_image(self):
         # Select the Imagename  from a folder
         try:
-            x = filedialog.askopenfilename(title ='"pen')
+            self.image_path = filedialog.askopenfilename(title ='"pen')
         except:
             return 'Failed To Open the File'
-        if x:
+        if self.image_path:
             global img
             # opens the image
-            img = Image.open(x)
+            img = Image.open(self.image_path)
             # resize the image and rootly a high-quality down sampling filter
             img = img.resize((500, 500), Image.ANTIALIAS)
             # PhotoImage class is used to add image to widgets, icons etc
@@ -81,25 +85,37 @@ class Main_window(ThemedTk, App):
     def clear_workspace(self, panel):
         print('clear_workspace')
         panel.grid_forget()
+        if self.result:
+            print('cleared result')
+            self.result.grid_forget()
+
 
     def classify(self):
         print('classify')
+        case = predict(self.image_path) # from main.py
+        self.show_classification_result(case)
 
+    def show_classification_result(self, case):
+        self.result_frame = ttk.LabelFrame(self.body, text='Classification result', width=505,height=100)
+        self.result_frame.grid(row=2, column=1, padx=50,pady=10)
+        self.result = ttk.Label(self.result_frame, text=case)
+        self.result.grid(padx=50,pady=5)
 
 class Window(Toplevel, App):
     def __init__(self, parent):
         super().__init__(parent)
-        # global wn_background
-        # wn_background = ImageTk.PhotoImage(Image.open('./assets/bk.jpg'))
-        # Label(self, image = wn_background).place(x = 0, y = 0)
+        global wn_background
+        wn_background = ImageTk.PhotoImage(Image.open('./assets/bk.png'))
+        Label(self, image = wn_background).pack(expand=True)
         self.body = ttk.Frame(self)
         # center all app content to the center of the body
         self.body.place(relx=0.5,rely=0.5,anchor=CENTER)
         # Allow Window to be resizable
         self.resizable(width=False, height=False)
         self.title('Doctorizer')
-        self.iconbitmap('./assets/logo.png')
-        self.config(bg="#2d2d2d")
+        # self.iconbitmap('./assets/logo.png')
+        # self.config(bg="#2d2d2d")
+
 
 class Patient_data_window(Window):
     def __init__(self, parent):
@@ -109,30 +125,39 @@ class Patient_data_window(Window):
         ttk.Label(self.body, text='Patient Name').grid(row=0, column=0)
         entry0 = ttk.Entry(self.body)
         entry0.grid(row=0, column=1,padx=5, pady=10)
-        name = entry0.get()
+
 
         ttk.Label(self.body, text='Patient Age').grid(row=1, column=0)
         entry1 = ttk.Entry(self.body)
         entry1.grid(row=1, column=1, padx=5,pady=10)
-        Age = entry1.get()
+
 
         ttk.Label(self.body, text='Patient previous illness').grid(row=2, column=0)
         entry2 = ttk.Entry(self.body)
         entry2.grid(row=2, column=1, padx=5,pady=10)
-        Age = entry2.get()
 
-        self.btn(self.body, text='generate report', command = self.generate_report).grid(row=5,column=2, padx=10,pady=15)
 
-    def generate_report(self):
+        self.btn(self.body, text='generate report', command = lambda: self.generate_report(
+        name = entry0.get(),
+        age = entry1.get(),
+        ill = entry2.get(),
+        )).grid(row=5,column=2, padx=10,pady=15)
+
+    def generate_report(self,name,age,ill):
         document = Document()
         document.add_heading('Doctorizer automated report', 0)
+        document.add_paragraph(f'Patient Name: {name} \t Patient Age: {age}')
         p = document.add_paragraph('based on the analyzed chest x-ray image, the patient is infected with a strange and dangerous bacteria, ')
         p.add_run(' and he might die with a propabiliy of 98.2%. ').bold = True
         p.add_run('enjoy!').italic = True
         self.save_report(document)
 
     def save_report(self, document):
-        filepath = filedialog.asksaveasfilename(initialfile = 'report.docx',defaultextension=".docx",filetypes=[("All Files","*.*"),("Word Documents","*.docx")])
+        filepath = filedialog.asksaveasfilename(initialfile = 'report.docx',
+        defaultextension=".docx",
+        filetypes=[("All Files","*.*"),
+        ("Word Documents","*.docx"),
+        ])
         try:
             document.save(filepath)
         except:
@@ -156,6 +181,6 @@ if __name__ == '__main__':
     #create root instance
     root = Main_window()
     print(root.get_themes())
-    root.set_theme('black') #xpnative
+    root.set_theme('xpnative') #xpnative
     root.gmtry(1100,600)
     root.mainloop()
