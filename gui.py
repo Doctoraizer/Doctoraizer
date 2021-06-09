@@ -8,7 +8,10 @@ from ttkthemes import ThemedTk
 from PIL import ImageTk, Image
 from docx import *
 from docx import Document
-from main import predict
+from main import prepare_img, predict_pneumonia, predict_viral_or_bacteria, predict_covid19
+from database import save_to_db, load_from_db 
+import  re
+
 class App:
     def __init__(self):
         print('App created..')
@@ -40,8 +43,10 @@ class Main_window(ThemedTk, App):
         self.resizable(width = True, height = True) # Allow Window to be resizable
         self.title('Doctorizer')
         self.image_path = None
-        self.result = None
-        # self.iconbitmap('./assets/logo.png')
+        self.result_frame = None
+        self.result_label = None
+        self.result = ''
+        self.iconbitmap('./assets/logo.ico')
         # self.config(bg="white")
         #left and right frames
         self.left_frame = ttk.Frame(self.body)
@@ -62,11 +67,11 @@ class Main_window(ThemedTk, App):
 
     #functions
     def upload_image(self):
-        # Select the Imagename  from a folder
+        # Select the Imagename from a folder
         try:
             self.image_path = filedialog.askopenfilename(title ='"pen')
         except:
-            return 'Failed To Open the File'
+            print('Failed To Open the File')
         if self.image_path:
             global img
             # opens the image
@@ -79,27 +84,38 @@ class Main_window(ThemedTk, App):
             global panel
             panel = ttk.Label(self.right_frame, image = img)
             # set the image as img
-            self.clear_workspace(panel)
             panel.grid(row=0, column=0)
 
-    def clear_workspace(self, panel):
+    def clear_workspace(self, space):
         print('clear_workspace')
-        panel.grid_forget()
-        if self.result:
+        if space:
+            space.grid_forget()
+        if self.result_frame:
             print('cleared result')
-            self.result.grid_forget()
-
+            self.result_label.grid_forget()
+            self.result_frame.grid_forget()
 
     def classify(self):
         print('classify')
-        case = predict(self.image_path) # from main.py
-        self.show_classification_result(case)
+        self.result = ''
+        if self.image_path:
+            prepared_img = prepare_img(self.image_path)
+            rs1 = predict_pneumonia(prepared_img)
+            self.result += rs1
+            if rs1.lower() != 'normal':
+                rs2 = predict_viral_or_bacteria(prepared_img)
+                self.result += ' | ' + rs2
+                if rs2.lower() == 'viral pneumonia':
+                    rs3 = predict_covid19(prepared_img)
+                    self.result += ' | ' + rs3
+            self.show_classification_result()
 
-    def show_classification_result(self, case):
+
+    def show_classification_result(self):
         self.result_frame = ttk.LabelFrame(self.body, text='Classification result', width=505,height=100)
         self.result_frame.grid(row=2, column=1, padx=50,pady=10)
-        self.result = ttk.Label(self.result_frame, text=case)
-        self.result.grid(padx=50,pady=5)
+        self.result_label = ttk.Label(self.result_frame, text=self.result)
+        self.result_label.grid(padx=50,pady=5)
 
 class Window(Toplevel, App):
     def __init__(self, parent):
@@ -113,7 +129,7 @@ class Window(Toplevel, App):
         # Allow Window to be resizable
         self.resizable(width=False, height=False)
         self.title('Doctorizer')
-        # self.iconbitmap('./assets/logo.png')
+        self.iconbitmap('./assets/logo.ico')
         # self.config(bg="#2d2d2d")
 
 
@@ -122,6 +138,23 @@ class Patient_data_window(Window):
         super().__init__(parent)
         #window settings
         self.title('patient data')
+
+        self.normal = """The chest X-ray image is a normal chest X-ray showing no obvious abnormality.
+The patient must continue to protect himself and others by adhering to preventive measures, as announced by the World Health Organization."""
+
+        self.covid = """The chest X-ray image shows abnormalities like consolidation, ground-glass opacity, nodular shadowing, and increase in lung density, the most likely cause for this is pneumonia caused by covid 19. A follow-up chest X-ray should be performed in 4-6 weeks following the commencement of treatment to ensure the resolution of pneumonia.
+The patient must adhere to the health protocol followed by the World Health Organization and adhere to the home quarantine for a period of 14 days.
+The patient needs regular pulse oximetry to monitor O2 saturation if O2 saturation< than 90%, the patient needs for O2 supplement.
+The patient may take certain drugs as needed for fever, discomfort, and increase immunity. These include Levofloxacin Tablet 500mg *1 for 7 days, Azithromycin 250mg 2*1 for 6 days, Paracetamol 500 mg*3, and Vitamins complex."""
+
+        self.pneumonia_bacteria = """This chest X-ray shows an abnormality, the most likely cause for this is bacteria pneumonia. The patient should be assessed using the CURB 65 clinical scoring system and treated with appropriate antibiotics. A follow-up chest X-ray should be performed in 4-6 weeks following the commencement of treatment to ensure the resolution of pneumonia.
+The patient may take these as needed for fever and discomfort. These include drugs such as aspirin, ibuprofen (Advil, Motrin IB, others) and acetaminophen (Tylenol, others)."""
+
+        self.pneumonia_viral = """The chest X-ray image shows abnormalities like bilateral perihilar peribranchial thickening, interstitial infiltrates and small-caliber airways have areas of atelectasis or air trapping,  the most likely cause for this is viral pneumonia. A follow-up chest X-ray should be performed in 4-6 weeks following the commencement of treatment to ensure the resolution of pneumonia.
+The patient should get sufficient rest and stay hydrated by drinking plenty of fluids.
+The patient needs regular pulse oximetry to monitor O2 saturation if O2 saturation< than 90%, the patient needs for O2 supplement.
+The patient may take certain drugs as needed for fever, discomfort, and increase immunity. These include Levofloxacin Tablet 500mg *1 for 7 days, Azithromycin 250mg 2*1 for 6 days, Paracetamol 500 mg*3, and Vitamins complex."""
+
         ttk.Label(self.body, text='Patient Name').grid(row=0, column=0)
         entry0 = ttk.Entry(self.body)
         entry0.grid(row=0, column=1,padx=5, pady=10)
@@ -132,24 +165,41 @@ class Patient_data_window(Window):
         entry1.grid(row=1, column=1, padx=5,pady=10)
 
 
-        ttk.Label(self.body, text='Patient previous illness').grid(row=2, column=0)
+        ttk.Label(self.body, text='Chronic diseases').grid(row=2, column=0)
         entry2 = ttk.Entry(self.body)
         entry2.grid(row=2, column=1, padx=5,pady=10)
 
 
-        self.btn(self.body, text='generate report', command = lambda: self.generate_report(
+        self.btn(self.body, text='generate report', command = lambda: [self.generate_report(
         name = entry0.get(),
         age = entry1.get(),
         ill = entry2.get(),
-        )).grid(row=5,column=2, padx=10,pady=15)
+        result = parent.result,
+        ),self.destroy()]
+        ).grid(row=5,column=2, padx=10,pady=15)
 
-    def generate_report(self,name,age,ill):
+    def generate_report(self,name,age,ill, result): # report: this function ******************************
         document = Document()
+        # from here
         document.add_heading('Doctorizer automated report', 0)
-        document.add_paragraph(f'Patient Name: {name} \t Patient Age: {age}')
-        p = document.add_paragraph('based on the analyzed chest x-ray image, the patient is infected with a strange and dangerous bacteria, ')
-        p.add_run(' and he might die with a propabiliy of 98.2%. ').bold = True
-        p.add_run('enjoy!').italic = True
+        document.add_paragraph(f'Patient Name: {name} \nPatient Age: {age} \nChronic diseases: {ill}')
+        document.add_paragraph(f'Case: {result} ').bold = True
+        # to here
+
+        if re.match(r'Normal', result):
+            case = self.normal
+        elif re.match(r'Bacter', result):
+            case = self.pneumonia_bacteria
+        elif re.match(r'Vir', result):
+            case = self.pneumonia_viral
+        else:
+            temp = re.split(r'\W+',result)
+            print(temp)
+            if int(temp[5]) >= 500 or int(temp[4]) == 1:
+                case = self.covid
+
+        p = document.add_paragraph(case)
+        print(result)
         self.save_report(document)
 
     def save_report(self, document):
@@ -181,6 +231,6 @@ if __name__ == '__main__':
     #create root instance
     root = Main_window()
     print(root.get_themes())
-    root.set_theme('xpnative') #xpnative
+    root.set_theme('xpnative') #xpnative itft1
     root.gmtry(1100,600)
     root.mainloop()
