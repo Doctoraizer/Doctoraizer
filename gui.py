@@ -8,6 +8,8 @@ from ttkthemes import ThemedTk
 from PIL import ImageTk, Image
 from docx import *
 from docx import Document
+from docx.shared import Pt, RGBColor, Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from main import prepare_img, predict_pneumonia, predict_viral_or_bacteria, predict_covid19
 # from database import save_to_db, load_from_db 
 import  re
@@ -169,22 +171,55 @@ The patient may take certain drugs as needed for fever, discomfort, and increase
         entry2 = ttk.Entry(self.body)
         entry2.grid(row=2, column=1, padx=5,pady=10)
 
+        ttk.Label(self.body, text='Gender').grid(row=3, column=0)
+        entry3 = ttk.Entry(self.body)
+        entry3.grid(row=3, column=1, padx=5,pady=10)
+
+
+        ttk.Label(self.body, text='blood type').grid(row=4, column=0)
+        entry4 = ttk.Entry(self.body)
+        entry4.grid(row=4, column=1, padx=5,pady=10)
+
+        ttk.Label(self.body, text='Date').grid(row=5, column=0)
+        entry5 = ttk.Entry(self.body)
+        entry5.grid(row=5, column=1, padx=5,pady=10)
 
         self.btn(self.body, text='generate report', command = lambda: [self.generate_report(
         name = entry0.get(),
         age = entry1.get(),
         ill = entry2.get(),
+        Gender = entry3.get(),
+        blood_type = entry4.get(),
+        Date = entry5.get(),
         result = parent.result,
         ),self.destroy()]
-        ).grid(row=5,column=2, padx=10,pady=15)
+        ).grid(row=7,column=2, padx=10,pady=15)
 
-    def generate_report(self,name,age,ill, result): # report: this function ******************************
+    def generate_report(self,name,age,ill, result,Gender,blood_type,Date): # report: this function ******************************
         document = Document()
         # from here
-        document.add_heading('Doctorizer automated report', 0)
-        document.add_paragraph(f'Patient Name: {name} \nPatient Age: {age} \nChronic diseases: {ill}')
-        document.add_paragraph(f'Case: {result} ').bold = True
 
+        # img = document.add_picture('assets/2632 [Converted].png', width=Inches(1.25))
+        my_image = document.add_picture('assets/2632 [Converted]+1.png', width=Inches(1.25))
+        last_paragraph = document.paragraphs[-1]
+        last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+
+        document.add_heading('Doctorizer automated report', 0)
+        last_paragraph = document.paragraphs[-1]
+        last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        document.add_heading('Patient info:', 1)
+
+        # head2.font.size = Pt(16)
+
+        info = document.add_paragraph().add_run(f'Patient Name: {name} \nPatient Age: {age} \nChronic diseases: {ill} \nGender: {Gender} \nBlood: {blood_type} \nDate: {Date}')
+        info.font.size = Pt(13)
+        info.font.name = 'Roboto'
+        info.font.color.rgb = RGBColor(55, 55, 95)
+        document.add_heading('Case:',1)
+        document.add_paragraph().add_run(f'{result}').bold = True
+
+        
         # to here
 
         if re.match(r'Normal', result):
@@ -198,8 +233,14 @@ The patient may take certain drugs as needed for fever, discomfort, and increase
             print(temp)
             if int(temp[5]) >= 500 or int(temp[4]) == 1:
                 case = self.covid
-
-        p = document.add_paragraph(case)
+        
+        document.add_heading('State And Recomendation', 2)
+        para = document.add_paragraph().add_run(case)
+        para.font.size = Pt(11)
+        para.font.name = 'Roboto'
+        document.add_picture('assets/Untitled-5.png', width=Inches(0.85))
+        last_paragraph = document.paragraphs[-1]
+        last_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
         print(result)
         self.save_report(document)
 
