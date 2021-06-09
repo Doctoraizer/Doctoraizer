@@ -9,7 +9,7 @@ from PIL import ImageTk, Image
 from docx import *
 from docx import Document
 from main import prepare_img, predict_pneumonia, predict_viral_or_bacteria, predict_covid19
-from database import save_to_db, load_from_db 
+# from database import save_to_db, load_from_db 
 import  re
 
 class App:
@@ -184,6 +184,7 @@ The patient may take certain drugs as needed for fever, discomfort, and increase
         document.add_heading('Doctorizer automated report', 0)
         document.add_paragraph(f'Patient Name: {name} \nPatient Age: {age} \nChronic diseases: {ill}')
         document.add_paragraph(f'Case: {result} ').bold = True
+
         # to here
 
         if re.match(r'Normal', result):
