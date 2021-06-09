@@ -274,6 +274,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "python-decouple"
+version = "3.4"
+description = "Strict separation of settings from code."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "python-docx"
 version = "0.8.11"
 description = "Create and update Microsoft Word .docx files."
@@ -460,7 +468,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.5"
-content-hash = "7696494b2511e5891af0826b7c99a1dca898199160cf18c5c3273077c31f6e7d"
+content-hash = "769ee27bb0252120889ca41322d72670356523bed02515c31d86b52809073b72"
 
 [metadata.files]
 absl-py = [
@@ -767,6 +775,10 @@ pyasn1-modules = [
 ]
 pycrypto = [
     {file = "pycrypto-2.6.1.tar.gz", hash = "sha256:f2ce1e989b272cfcb677616763e0a2e7ec659effa67a88aa92b3a65528f60a3c"},
+]
+python-decouple = [
+    {file = "python-decouple-3.4.tar.gz", hash = "sha256:2e5adb0263a4f963b58d7407c4760a2465d464ee212d733e2a2c179e54c08d8f"},
+    {file = "python_decouple-3.4-py3-none-any.whl", hash = "sha256:a8268466e6389a639a20deab9d880faee186eb1eb6a05e54375bdf158d691981"},
 ]
 python-docx = [
     {file = "python-docx-0.8.11.tar.gz", hash = "sha256:1105d233a0956dd8dd1e710d20b159e2d72ac3c301041b95f4d4ceb3e0ebebc4"},
