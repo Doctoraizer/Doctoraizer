@@ -8,9 +8,9 @@ authors = ["Your Name <you@example.com>"]
 python = "^3.8.5"
 Pillow = "^8.2.0"
 python-docx = "^0.8.11"
-ttkthemes = "^3.2.2"
 numpy = "1.19.5"
 tensorflow = "^2.5.0"
+pycrypto = "^2.6.1"
 
 [tool.poetry.dev-dependencies]
 
