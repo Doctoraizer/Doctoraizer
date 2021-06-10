@@ -8,8 +8,11 @@ from ttkthemes import ThemedTk
 from PIL import ImageTk, Image
 from docx import *
 from docx import Document
-from main import prepare_img, predict_pneumonia, predict_viral_or_bacteria, predict_covid19
-from database import save_to_db, load_from_db 
+from docx.shared import Pt, RGBColor, Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from main import prepare_img_keras, predict_class
+from data_base import save_in_db, query_by_name, c
+# from encryption import encrypt, decrypt
 import  re
 
 class App:
@@ -49,6 +52,9 @@ class Main_window(ThemedTk, App):
         self.iconbitmap('./assets/logo.ico')
         # self.config(bg="white")
         #left and right frames
+        self.l_upp_frame = ttk.Frame(self.body)
+        self.l_upp_frame.place(x=0,y=0)
+
         self.left_frame = ttk.Frame(self.body)
         self.left_frame.grid(row=1, column=0, padx=50, pady=10)
 
@@ -59,6 +65,11 @@ class Main_window(ThemedTk, App):
         # Label(self.right_frame, image =b_background).place(x=0,y=0)
         # main screen widgets
         # Label(self, text ="X-ray image analyzer", font=10).place(relx=0.5,rely=0.04, anchor=CENTER)
+        global db_image
+        db_image = Image.open('./assets/db.png')
+        db_image = db_image.resize((25, 25))
+        db_image = ImageTk.PhotoImage(db_image)
+        Button(self.l_upp_frame, image = db_image,highlightthickness = 0, bd = 0, command=show_database_w).pack(padx=5,pady=5)
 
         self.btn(self.left_frame, text ="upload image", command=self.upload_image).grid(row=1, column=0,padx=50, pady=10)
         self.btn(self.left_frame, text ="clear workspace",command = lambda: self.clear_workspace(panel)).grid(row=2, column=0, pady=10)
@@ -99,17 +110,9 @@ class Main_window(ThemedTk, App):
         print('classify')
         self.result = ''
         if self.image_path:
-            prepared_img = prepare_img(self.image_path)
-            rs1 = predict_pneumonia(prepared_img)
-            self.result += rs1
-            if rs1.lower() != 'normal':
-                rs2 = predict_viral_or_bacteria(prepared_img)
-                self.result += ' | ' + rs2
-                if rs2.lower() == 'viral pneumonia':
-                    rs3 = predict_covid19(prepared_img)
-                    self.result += ' | ' + rs3
+            prepared_img = prepare_img_keras(self.image_path)
+            self.result = predict_class(prepared_img)
             self.show_classification_result()
-
 
     def show_classification_result(self):
         self.result_frame = ttk.LabelFrame(self.body, text='Classification result', width=505,height=100)
@@ -169,36 +172,79 @@ The patient may take certain drugs as needed for fever, discomfort, and increase
         entry2 = ttk.Entry(self.body)
         entry2.grid(row=2, column=1, padx=5,pady=10)
 
+        ttk.Label(self.body, text='gender').grid(row=3, column=0)
+        entry3 = ttk.Entry(self.body)
+        entry3.grid(row=3, column=1, padx=5,pady=10)
+
+
+        ttk.Label(self.body, text='blood type').grid(row=4, column=0)
+        entry4 = ttk.Entry(self.body)
+        entry4.grid(row=4, column=1, padx=5,pady=10)
+
+        ttk.Label(self.body, text='date').grid(row=5, column=0)
+        entry5 = ttk.Entry(self.body)
+        entry5.grid(row=5, column=1, padx=5,pady=10)
 
         self.btn(self.body, text='generate report', command = lambda: [self.generate_report(
         name = entry0.get(),
         age = entry1.get(),
         ill = entry2.get(),
+        gender = entry3.get(),
+        blood_type = entry4.get(),
+        date = entry5.get(),
         result = parent.result,
         ),self.destroy()]
-        ).grid(row=5,column=2, padx=10,pady=15)
+        ).grid(row=7,column=2, padx=10,pady=15)
 
-    def generate_report(self,name,age,ill, result): # report: this function ******************************
+
+        self.btn(self.body, text='Save to database', command = lambda: save_in_db(
+        full_name = entry0.get(),
+        age = entry1.get(),
+        cronic_diseas = entry2.get(),
+        gender = entry3.get(),
+        blood_type = entry4.get(),
+        image_date = entry5.get(),
+        result = parent.result,
+        img_data = str(ImageTk.PhotoImage(Image.open(root.image_path)))
+        )).grid(row=7,column=1, padx=10,pady=15)
+
+    def generate_report(self,name,age,ill, result,gender,blood_type,date): # report: this function ******************************
         document = Document()
         # from here
+        my_image = document.add_picture('assets/2632 [Converted]+1.png', width=Inches(1.25))
+        last_paragraph = document.paragraphs[-1]
+        last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
         document.add_heading('Doctorizer automated report', 0)
-        document.add_paragraph(f'Patient Name: {name} \nPatient Age: {age} \nChronic diseases: {ill}')
-        document.add_paragraph(f'Case: {result} ').bold = True
+        last_paragraph = document.paragraphs[-1]
+        last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        document.add_heading('Patient info:', 1)
+
+        info = document.add_paragraph().add_run(f'Patient Name: {name} \nPatient Age: {age} \nChronic diseases: {ill} \ngender: {gender} \nBlood: {blood_type} \ndate: {date}')
+        info.font.size = Pt(13)
+        info.font.name = 'Roboto'
+        info.font.color.rgb = RGBColor(55, 55, 95)
+        document.add_heading('Case:',1)
+        document.add_paragraph().add_run(f'{result}').bold = True
+
         # to here
-
-        if re.match(r'Normal', result):
+        print(result)
+        if result == 'No illness detected':
             case = self.normal
-        elif re.match(r'Bacter', result):
+        elif result == 'Pneumonia | Bacteria':
             case = self.pneumonia_bacteria
-        elif re.match(r'Vir', result):
-            case = self.pneumonia_viral
+        elif result == 'Pneumonia | COVID-19 Positive':
+            case = self.covid
         else:
-            temp = re.split(r'\W+',result)
-            print(temp)
-            if int(temp[5]) >= 500 or int(temp[4]) == 1:
-                case = self.covid
+            case = f'mmm just a {result}'
 
-        p = document.add_paragraph(case)
+        document.add_heading('State And Recomendation', 2)
+        para = document.add_paragraph().add_run(case)
+        para.font.size = Pt(11)
+        para.font.name = 'Roboto'
+        document.add_picture('assets/Untitled-5.png', width=Inches(0.85))
+        last_paragraph = document.paragraphs[-1]
+        last_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
         print(result)
         self.save_report(document)
 
@@ -212,6 +258,7 @@ The patient may take certain drugs as needed for fever, discomfort, and increase
             document.save(filepath)
         except:
             raise Exception('Error: File not saved')
+
         self.open_report(filepath)
 
     def open_report(self,filepath):
@@ -224,10 +271,51 @@ The patient may take certain drugs as needed for fever, discomfort, and increase
             subprocess.call(('xdg-open', filepath))
 
 
+class database_window(Window):
+    def __init__(self, parent):
+        super().__init__(parent)
+        #window settings
+        global wn_background
+        wn_background = ImageTk.PhotoImage(Image.open('./assets/bk_db.png'))
+        Label(self, image = wn_background).place(x=0,y=0)
+        self.title('database')
+
+        t = ttk.Treeview(self)
+        t['columns'] = ('name','age','chronic diseases' , 'gender','blood_type','date','case')
+        t['show']='headings'
+        t.column('name',width=100,minwidth=100, anchor=CENTER)
+        t.column('age',width=50,minwidth=50, anchor=CENTER )
+        t.column('chronic diseases',width=100,minwidth=100, anchor=CENTER)
+        t.column('gender',width=70,minwidth=70, anchor=CENTER)
+        t.column('blood_type',width=70,minwidth=70, anchor=CENTER)
+        t.column('date',width=70,minwidth=70, anchor=CENTER)
+        t.column('case',width=200,minwidth=200, anchor=CENTER)
+
+
+        t.heading('name', anchor=CENTER, text='name')
+        t.heading('age', anchor=CENTER, text='age')
+        t.heading('chronic diseases', anchor=CENTER, text='chronic diseases')
+        t.heading('gender', anchor=CENTER, text='gender')
+        t.heading('blood_type', anchor=CENTER, text='blood type')
+        t.heading('date', anchor=CENTER, text='date')
+        t.heading('case', anchor=CENTER, text='case')
+
+        i=0
+        for row in c.execute("SELECT * ,oid FROM information"):
+            t.insert('',i,text='',values=(row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
+            i += 1
+        t.place(x=10,y=20)
+
+
+
 if __name__ == '__main__':
     def show_patient_dw():
         patient_dw = Patient_data_window(parent=root)
         patient_dw.gmtry(600,400)
+
+    def show_database_w():
+        patient_dw = database_window(parent=root)
+        patient_dw.gmtry(800,533)
     #create root instance
     root = Main_window()
     print(root.get_themes())
