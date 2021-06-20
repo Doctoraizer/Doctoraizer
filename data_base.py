@@ -1,11 +1,6 @@
 import sqlite3
 from sqlite3.dbapi2 import Cursor, connect
-from encryption import *
-# from tkinter import *
-# from PIL import ImageTk, Image
 
-# root=Tk()
-# # root.title('Code')
 
 conn=sqlite3.connect('paitent_database.db')
 # # # create Database 
@@ -68,9 +63,9 @@ def load_from_db():
     # query data
     y=c.execute("SELECT * ,oid FROM information")
     recoreds=c.fetchall()
-    decrypt_blocks(recoreds,encrpted_data[1])
+    # decrypt_blocks(recoreds,encrpted_data[1])
 
-    for i in recoreds:
+    for i in y:
         image=i[7]
         name=i[0]
         # print(image)
@@ -80,26 +75,30 @@ def load_from_db():
   
 
 def query_by_name(full_name_p):
-    conn=sqlite3.connect('paitent_database.db')
+    print('helllo')
+    # conn=sqlite3.connect('paitent_database.db')
     x=c.execute("SELECT * from information WHERE full_name="+'\''+full_name_p+'\'')
+    # print(x.fetchall())
+    for i in x:
+        image=i[7]
+        # print(image)
+        name=i[0]
+        print(name)
+        with open(f'{name}'+'.png','wb') as f:
+            f.write(image)
+    # x.fetchall())
 
 
 
-drop_table()
 with open('assets/personal_info.png','rb')as f:
     img_data=f.read()    
 
-encrpted_data=encrypt_blocks('Raneem',23,'he is good','F','B+','10/5/2015')
-# save_in_db(encrpted_data[0][0],encrpted_data[0][1],encrpted_data[0][2],encrpted_data[0][3],encrpted_data[0][4],encrpted_data[0][5],'postive',img_data)
+# encrpted_data=encrypt_blocks('Raneem',23,'he is good','F','B+','10/5/2015')
 
-
-
-# for i in encrpted_data:
-#     print(i)
-
-load_from_db()
-query_by_name("Raneem")
-
+if __name__=="__main__":
+    drop_table()
+    save_in_db('Raneem',23,'he is good','F','B+','10/5/2015','result,',img_data)
+    query_by_name("Raneem")
 
 
 
